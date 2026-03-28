@@ -62,18 +62,26 @@
       let customFlowerImg = null;
       let customBeeImg = null;
 
-      function drawCenteredText(text, line = 0, totalLines = 1) {
+      function drawCenteredText(lines) {
+        if (!lines || !lines.length) return;
+
         // 🎯 Base responsive size
         let fontSize = Math.floor(Math.min(W, H) * 0.08);
 
-        // 🧱 Clamp (prevents too small / too big)
+        // 🧱 Clamp
         fontSize = Math.max(28, Math.min(96, fontSize));
 
         ctx.font = `bold ${fontSize}px "Arial Black", Arial, sans-serif`;
 
-        // 📏 Ensure it fits horizontally
+        // 📏 Find longest line
+        let longest = lines.reduce((a, b) =>
+          ctx.measureText(a).width > ctx.measureText(b).width ? a : b,
+        );
+
         const maxWidth = W * 0.85;
-        while (ctx.measureText(text).width > maxWidth && fontSize > 20) {
+
+        // 🔧 Shrink font based on longest line ONLY
+        while (ctx.measureText(longest).width > maxWidth && fontSize > 20) {
           fontSize -= 2;
           ctx.font = `bold ${fontSize}px "Arial Black", Arial, sans-serif`;
         }
@@ -87,13 +95,19 @@
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
 
+        const totalLines = lines.length;
         const offset = (totalLines - 1) / 2;
-        const x = W / 2;
-        const y = H / 2.8 + (line - offset) * lineHeight;
 
-        ctx.strokeText(text, x, y);
-        ctx.fillText(text, x, y);
+        const x = W / 2;
+
+        // 🎨 Draw all lines
+        lines.forEach((text, i) => {
+          const y = H / 2.8 + (i - offset) * lineHeight;
+          ctx.strokeText(text, x, y);
+          ctx.fillText(text, x, y);
+        });
       }
+
       function getDefaultFlowerImg(idx) {
         return defaultFlowerImgs[idx % defaultFlowerImgs.length];
       }
@@ -350,8 +364,7 @@
           flowers.forEach((f) => f.draw());
           bees.forEach((b) => b.update(dt));
           bees.forEach((b) => b.draw());
-          drawCenteredText("hi maryu");
-          drawCenteredText("was nice knowing you", 1);
+          drawCenteredText(["hi maryu", "was nice knowing you"]);
           requestAnimationFrame(loop);
         }
         requestAnimationFrame(loop);
