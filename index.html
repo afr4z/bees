@@ -133,21 +133,13 @@
 
         canvas.style.width = W + "px";
         canvas.style.height = H + "px";
-
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        // then apply DPR
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       }
       resize();
       window.addEventListener("resize", resize);
-
-      function loadImageFile(file, cb) {
-        const r = new FileReader();
-        r.onload = (e) => {
-          const i = new Image();
-          i.onload = () => cb(i);
-          i.src = e.target.result;
-        };
-        r.readAsDataURL(file);
-      }
+      document.addEventListener("fullscreenchange", resize);
 
       const flowers = [];
       const bees = [];
