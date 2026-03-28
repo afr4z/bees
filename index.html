@@ -1,273 +1,346 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Flower Boy</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital@1&display=swap');
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { width: 100vw; height: 100vh; overflow: hidden; cursor: crosshair; }
-  canvas { display: block; position: absolute; top: 0; left: 0; }
-
-
-  input[type="file"] { display: none; }
-</style>
-</head>
-<body>
-<canvas id="c"></canvas>
-
-
-<script>
-const BG_SRC     = './Boneless Flower Boy.jpg'
-const BEE_SRC    = './bee.png'
-const FLOWER_SRCS = [
-  './sunflower1.png',
-  './sunflower2.png',
-  './tulip.png',
-  './tulip2.png'
-];
-
-const bgImg = new Image();
-const defaultBeeImg = new Image();
-const defaultFlowerImgs = FLOWER_SRCS.map(() => new Image());
-let assetsLoaded = 0;
-const totalAssets = 2 + FLOWER_SRCS.length;
-function onLoad() { if (++assetsLoaded === totalAssets) init(); }
-bgImg.onload = onLoad;
-defaultBeeImg.onload = onLoad;
-bgImg.src = BG_SRC;
-defaultBeeImg.src = BEE_SRC;
-defaultFlowerImgs.forEach((img, i) => { img.onload = onLoad; img.src = FLOWER_SRCS[i]; });
-
-let customFlowerImg = null;
-let customBeeImg = null;
-function getDefaultFlowerImg(idx) { return defaultFlowerImgs[idx % defaultFlowerImgs.length]; }
-function getFlowerImg(idx) { return customFlowerImg || getDefaultFlowerImg(idx); }
-function getBeeImg()    { return customBeeImg    || defaultBeeImg; }
-
-const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
-let W, H;
-function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
-resize();
-window.addEventListener('resize', resize);
-
-
-function loadImageFile(file, cb) {
-  const r = new FileReader();
-  r.onload = e => { const i = new Image(); i.onload = () => cb(i); i.src = e.target.result; };
-  r.readAsDataURL(file);
-}
-
-const flowers = [];
-const bees = [];
-const BEE_PER_FLOWER = 0.8;
-const INITIAL_BEES   = 3;
-
-class Flower {
-  constructor(x, y, scale = 1) {
-    this.x = x; this.y = y;
-    this.scale = 0.001;
-    this.targetScale = scale * (0.65 + Math.random() * 0.55);
-    this.stemH = 70 + Math.random() * 40;
-    this.angle = (Math.random() - 0.5) * 0.25;
-    this.sway = Math.random() * Math.PI * 2;
-    this.swaySpeed = 0.35 + Math.random() * 0.35;
-    this.flipX = Math.random() < 0.5 ? 1 : -1;
-    this.spriteIdx = Math.floor(Math.random() * FLOWER_SRCS.length);
-  }
-
-  update(dt) {
-    if (this.scale < this.targetScale)
-      this.scale += (this.targetScale - this.scale) * 0.08;
-    this.sway += dt * this.swaySpeed;
-  }
-
-  draw() {
-    const sw = Math.sin(this.sway) * 0.035;
-    const fimg = getFlowerImg(this.spriteIdx);
-    const iw = fimg.naturalWidth || fimg.width;
-    const ih = fimg.naturalHeight || fimg.height;
-    const drawH = this.stemH * this.scale;
-    const drawW = drawH * (iw / ih);
-    ctx.save();
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.angle + sw);
-    ctx.scale(this.flipX, 1);
-    ctx.drawImage(fimg, -drawW / 2, -drawH, drawW, drawH);
-    ctx.restore();
-  }
-
-  tip() {
-    const sw = Math.sin(this.sway) * 0.035;
-    const angle = this.angle + sw;
-    const drawH = this.stemH * this.scale * 2.2 * 0.82;
-    return {
-      x: this.x - Math.sin(angle) * drawH,
-      y: this.y - Math.cos(angle) * drawH
-    };
-  }
-}
-
-class Bee {
-  constructor() {
-    // Start scattered along the bottom of the screen
-    this.x = (0.1 + Math.random() * 0.8) * W;
-    this.y = H * (0.82 + Math.random() * 0.1);
-    // Idle hover anchor — drifts lazily at bottom
-    this.idleX = this.x;
-    this.idleY = this.y;
-    this.idlePhaseX = Math.random() * Math.PI * 2;
-    this.idlePhaseY = Math.random() * Math.PI * 2;
-    this.idleSpeedX = 0.25 + Math.random() * 0.2;
-    this.idleSpeedY = 0.3  + Math.random() * 0.2;
-    this.idleRadX = 18 + Math.random() * 14;
-    this.idleRadY = 8  + Math.random() * 6;
-
-    this.target = null; this.currentFlower = null;
-    this.visitTimer = 0; this.visiting = false;
-    this.wingPhase = Math.random() * Math.PI * 2;
-    this.speed = 90 + Math.random() * 60;
-    this.wobble = Math.random() * Math.PI * 2;
-    this.wobbleAmp = (Math.random() - 0.5) * 30;
-    this.facing = 1;
-    this.beeScale = 0.12 + Math.random() * 0.04;
-  }
-
-  pickTarget() {
-    if (!flowers.length) { this.target = null; return; }
-    const cands = flowers.filter(f => f !== this.currentFlower && f.scale > 0.3);
-    const pool = cands.length ? cands : flowers;
-    this.target = pool[Math.floor(Math.random() * pool.length)];
-  }
-
-  update(dt) {
-    this.wingPhase += dt * 18;
-    this.wobble    += dt * 2.5;
-    this.idlePhaseX += dt * this.idleSpeedX;
-    this.idlePhaseY += dt * this.idleSpeedY;
-
-    // No flowers — idle hover at bottom
-    if (!flowers.length) {
-      this.target = null;
-      this.visiting = false;
-      const tx = this.idleX + Math.sin(this.idlePhaseX) * this.idleRadX;
-      const ty = this.idleY + Math.sin(this.idlePhaseY) * this.idleRadY;
-      const dx = tx - this.x, dy = ty - this.y;
-      if (Math.abs(dx) > 0.5) this.facing = dx > 0 ? 1 : -1;
-      this.x += dx * dt * 2.5;
-      this.y += dy * dt * 2.5;
-      return;
-    }
-
-    // Have flowers — pick target if needed
-    if (!this.target || !flowers.includes(this.target)) {
-      this.pickTarget();
-    }
-
-    if (this.visiting) {
-      this.visitTimer -= dt;
-      if (this.visitTimer <= 0) {
-        this.visiting = false;
-        this.currentFlower = this.target;
-        this.pickTarget();
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flower Boy</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital@1&display=swap");
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
       }
-      if (this.target) {
-        const t = this.target.tip();
-        const offset = this.target.stemH * this.target.scale * 0.58;
-        
-        const tx = t.x;
-        const ty = t.y + offset;
-        
-        this.x += (tx - this.x) * dt * 3;
-        this.y += (ty - this.y) * dt * 3;      }
-      return;
-    }
+      body {
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        cursor: crosshair;
+      }
+      canvas {
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
 
-    if (!this.target) return;
+      input[type="file"] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
 
-    const t = this.target.tip();
-    const dx = t.x - this.x, dy = t.y - this.y;
-    const dist = Math.sqrt(dx*dx + dy*dy);
-    if (Math.abs(dx) > 1) this.facing = dx > 0 ? 1 : -1;
+    <script>
+      const BG_SRC = "./Boneless Flower Boy.jpg";
+      const BEE_SRC = "./bee.png";
+      const FLOWER_SRCS = [
+        "./sunflower1.png",
+        "./sunflower2.png",
+        "./tulip.png",
+        "./tulip2.png",
+      ];
 
-    if (dist < 14) {
-      this.visiting = true;
-      this.visitTimer = 1.2 + Math.random() * 1.8;
-    } else {
-      const perp = Math.sin(this.wobble) * this.wobbleAmp;
-      const nx = dy/dist, ny = -dx/dist;
-      this.x += (dx/dist * this.speed + nx*perp) * dt;
-      this.y += (dy/dist * this.speed + ny*perp) * dt;
-    }
-  }
+      const bgImg = new Image();
+      const defaultBeeImg = new Image();
+      const defaultFlowerImgs = FLOWER_SRCS.map(() => new Image());
+      let assetsLoaded = 0;
+      const totalAssets = 2 + FLOWER_SRCS.length;
+      function onLoad() {
+        if (++assetsLoaded === totalAssets) init();
+      }
+      bgImg.onload = onLoad;
+      defaultBeeImg.onload = onLoad;
+      bgImg.src = BG_SRC;
+      defaultBeeImg.src = BEE_SRC;
+      defaultFlowerImgs.forEach((img, i) => {
+        img.onload = onLoad;
+        img.src = FLOWER_SRCS[i];
+      });
 
-  draw() {
-    const bimg = getBeeImg();
-    const iw = bimg.naturalWidth || bimg.width;
-    const ih = bimg.naturalHeight || bimg.height;
-    const drawW = iw * this.beeScale;
-    const drawH = ih * this.beeScale;
-    const bob = Math.sin(this.wobble * 2.2) * 3;
-    ctx.save();
-    ctx.translate(this.x, this.y + bob);
-    ctx.scale(this.facing, 1);
-    ctx.drawImage(bimg, -drawW/2, -drawH/2, drawW, drawH);
-    ctx.restore();
-  }
-}
+      let customFlowerImg = null;
+      let customBeeImg = null;
 
-function drawBackground() {
-  if (bgImg.complete && bgImg.naturalWidth) {
-    const iw = bgImg.naturalWidth, ih = bgImg.naturalHeight;
-    const scale = Math.max(W/iw, H/ih);
-    const dw = iw*scale, dh = ih*scale;
-    ctx.drawImage(bgImg, (W-dw)/2, (H-dh)/2, dw, dh);
-  }
-}
+      function drawCenteredText(text, line = 0, lineHeight = 50) {
+        ctx.fillStyle = "white";
+        ctx.font = 'bold 44px "Arial Black", Arial, sans-serif';
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
 
-function syncBees() {
-  const target = Math.max(INITIAL_BEES, Math.floor(flowers.length * BEE_PER_FLOWER));
-  while (bees.length < target) bees.push(new Bee());
-}
+        // Optional outline for contrast
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 3;
 
-function init() {
-  // Start with no flowers — bees idle at bottom
-  syncBees();
+        const x = W / 2;
+        const y = H / 2.8 + line * lineHeight;
 
-  canvas.addEventListener('click', e => {
+        ctx.strokeText(text, x, y);
+        ctx.fillText(text, x, y);
+      }
 
-    const y = e.clientY;
-    
-    const x = e.clientX;
-    // slight curve (natural hills look)
-    const horizon = H * 0.65 + Math.sin(x * 0.002) * 30;
-    const HORIZON = H * 0.65; // adjust this
-    if (y < horizon) return;
+      function getDefaultFlowerImg(idx) {
+        return defaultFlowerImgs[idx % defaultFlowerImgs.length];
+      }
+      function getFlowerImg(idx) {
+        return customFlowerImg || getDefaultFlowerImg(idx);
+      }
+      function getBeeImg() {
+        return customBeeImg || defaultBeeImg;
+      }
 
-    const scale = 0.4 + 0.8 * Math.pow(y / H, 1.6); // perspective scaling
-    flowers.push(new Flower(e.clientX, e.clientY, scale));
-    syncBees();
-    // All idle bees immediately pick this new flower as target
-    bees.forEach(b => { if (!b.target) b.pickTarget(); });
-  });
+      const canvas = document.getElementById("c");
+      const ctx = canvas.getContext("2d");
+      let W, H;
+      function resize() {
+        W = canvas.width = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+      }
+      resize();
+      window.addEventListener("resize", resize);
 
-  let last = performance.now();
-  function loop(now) {
-    const dt = Math.min((now - last)/1000, 0.05);
-    last = now;
-    ctx.clearRect(0, 0, W, H);
-    drawBackground();
-    flowers.forEach(f => f.update(dt));
-    flowers.sort((a,b) => a.y - b.y);
-    flowers.forEach(f => f.draw());
-    bees.forEach(b => b.update(dt));
-    bees.forEach(b => b.draw());
-    requestAnimationFrame(loop);
-  }
-  requestAnimationFrame(loop);
-}
-</script>
-</body>
+      function loadImageFile(file, cb) {
+        const r = new FileReader();
+        r.onload = (e) => {
+          const i = new Image();
+          i.onload = () => cb(i);
+          i.src = e.target.result;
+        };
+        r.readAsDataURL(file);
+      }
+
+      const flowers = [];
+      const bees = [];
+      const BEE_PER_FLOWER = 0.8;
+      const INITIAL_BEES = 3;
+
+      class Flower {
+        constructor(x, y, scale = 1) {
+          this.x = x;
+          this.y = y;
+          this.scale = 0.001;
+          this.targetScale = scale * (0.65 + Math.random() * 0.55);
+          this.stemH = 70 + Math.random() * 40;
+          this.angle = (Math.random() - 0.5) * 0.25;
+          this.sway = Math.random() * Math.PI * 2;
+          this.swaySpeed = 0.35 + Math.random() * 0.35;
+          this.flipX = Math.random() < 0.5 ? 1 : -1;
+          this.spriteIdx = Math.floor(Math.random() * FLOWER_SRCS.length);
+        }
+
+        update(dt) {
+          if (this.scale < this.targetScale)
+            this.scale += (this.targetScale - this.scale) * 0.08;
+          this.sway += dt * this.swaySpeed;
+        }
+
+        draw() {
+          const sw = Math.sin(this.sway) * 0.035;
+          const fimg = getFlowerImg(this.spriteIdx);
+          const iw = fimg.naturalWidth || fimg.width;
+          const ih = fimg.naturalHeight || fimg.height;
+          const drawH = this.stemH * this.scale;
+          const drawW = drawH * (iw / ih);
+          ctx.save();
+          ctx.translate(this.x, this.y);
+          ctx.rotate(this.angle + sw);
+          ctx.scale(this.flipX, 1);
+          ctx.drawImage(fimg, -drawW / 2, -drawH, drawW, drawH);
+          ctx.restore();
+        }
+
+        tip() {
+          const sw = Math.sin(this.sway) * 0.035;
+          const angle = this.angle + sw;
+          const drawH = this.stemH * this.scale * 2.2 * 0.82;
+          return {
+            x: this.x - Math.sin(angle) * drawH,
+            y: this.y - Math.cos(angle) * drawH,
+          };
+        }
+      }
+
+      class Bee {
+        constructor() {
+          // Start scattered along the bottom of the screen
+          this.x = (0.1 + Math.random() * 0.8) * W;
+          this.y = H * (0.82 + Math.random() * 0.1);
+          // Idle hover anchor — drifts lazily at bottom
+          this.idleX = this.x;
+          this.idleY = this.y;
+          this.idlePhaseX = Math.random() * Math.PI * 2;
+          this.idlePhaseY = Math.random() * Math.PI * 2;
+          this.idleSpeedX = 0.25 + Math.random() * 0.2;
+          this.idleSpeedY = 0.3 + Math.random() * 0.2;
+          this.idleRadX = 18 + Math.random() * 14;
+          this.idleRadY = 8 + Math.random() * 6;
+
+          this.target = null;
+          this.currentFlower = null;
+          this.visitTimer = 0;
+          this.visiting = false;
+          this.wingPhase = Math.random() * Math.PI * 2;
+          this.speed = 90 + Math.random() * 60;
+          this.wobble = Math.random() * Math.PI * 2;
+          this.wobbleAmp = (Math.random() - 0.5) * 30;
+          this.facing = 1;
+          this.beeScale = 0.12 + Math.random() * 0.04;
+        }
+
+        pickTarget() {
+          if (!flowers.length) {
+            this.target = null;
+            return;
+          }
+          const cands = flowers.filter(
+            (f) => f !== this.currentFlower && f.scale > 0.3,
+          );
+          const pool = cands.length ? cands : flowers;
+          this.target = pool[Math.floor(Math.random() * pool.length)];
+        }
+
+        update(dt) {
+          this.wingPhase += dt * 18;
+          this.wobble += dt * 2.5;
+          this.idlePhaseX += dt * this.idleSpeedX;
+          this.idlePhaseY += dt * this.idleSpeedY;
+
+          // No flowers — idle hover at bottom
+          if (!flowers.length) {
+            this.target = null;
+            this.visiting = false;
+            const tx = this.idleX + Math.sin(this.idlePhaseX) * this.idleRadX;
+            const ty = this.idleY + Math.sin(this.idlePhaseY) * this.idleRadY;
+            const dx = tx - this.x,
+              dy = ty - this.y;
+            if (Math.abs(dx) > 0.5) this.facing = dx > 0 ? 1 : -1;
+            this.x += dx * dt * 2.5;
+            this.y += dy * dt * 2.5;
+            return;
+          }
+
+          // Have flowers — pick target if needed
+          if (!this.target || !flowers.includes(this.target)) {
+            this.pickTarget();
+          }
+
+          if (this.visiting) {
+            this.visitTimer -= dt;
+            if (this.visitTimer <= 0) {
+              this.visiting = false;
+              this.currentFlower = this.target;
+              this.pickTarget();
+            }
+            if (this.target) {
+              const t = this.target.tip();
+              const offset = this.target.stemH * this.target.scale * 0.58;
+
+              const tx = t.x;
+              const ty = t.y + offset;
+
+              this.x += (tx - this.x) * dt * 3;
+              this.y += (ty - this.y) * dt * 3;
+            }
+            return;
+          }
+
+          if (!this.target) return;
+
+          const t = this.target.tip();
+          const dx = t.x - this.x,
+            dy = t.y - this.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (Math.abs(dx) > 1) this.facing = dx > 0 ? 1 : -1;
+
+          if (dist < 14) {
+            this.visiting = true;
+            this.visitTimer = 1.2 + Math.random() * 1.8;
+          } else {
+            const perp = Math.sin(this.wobble) * this.wobbleAmp;
+            const nx = dy / dist,
+              ny = -dx / dist;
+            this.x += ((dx / dist) * this.speed + nx * perp) * dt;
+            this.y += ((dy / dist) * this.speed + ny * perp) * dt;
+          }
+        }
+
+        draw() {
+          const bimg = getBeeImg();
+          const iw = bimg.naturalWidth || bimg.width;
+          const ih = bimg.naturalHeight || bimg.height;
+          const drawW = iw * this.beeScale;
+          const drawH = ih * this.beeScale;
+          const bob = Math.sin(this.wobble * 2.2) * 3;
+          ctx.save();
+          ctx.translate(this.x, this.y + bob);
+          ctx.scale(this.facing, 1);
+          ctx.drawImage(bimg, -drawW / 2, -drawH / 2, drawW, drawH);
+          ctx.restore();
+        }
+      }
+
+      function drawBackground() {
+        if (bgImg.complete && bgImg.naturalWidth) {
+          const iw = bgImg.naturalWidth,
+            ih = bgImg.naturalHeight;
+          const scale = Math.max(W / iw, H / ih);
+          const dw = iw * scale,
+            dh = ih * scale;
+          ctx.drawImage(bgImg, (W - dw) / 2, (H - dh) / 2, dw, dh);
+        }
+      }
+
+      function syncBees() {
+        const target = Math.max(
+          INITIAL_BEES,
+          Math.floor(flowers.length * BEE_PER_FLOWER),
+        );
+        while (bees.length < target) bees.push(new Bee());
+      }
+
+      function init() {
+        // Start with no flowers — bees idle at bottom
+        if (!sessionStorage.getItem("visited")) {
+          fetch("/api/visit", { method: "POST" });
+          sessionStorage.setItem("visited", "true");
+        }
+        syncBees();
+
+        canvas.addEventListener("click", (e) => {
+          const y = e.clientY;
+
+          const x = e.clientX;
+          // slight curve (natural hills look)
+          const horizon = H * 0.65 + Math.sin(x * 0.002) * 30;
+          const HORIZON = H * 0.65; // adjust this
+          if (y < horizon) return;
+
+          const scale = 0.4 + 0.8 * Math.pow(y / H, 1.6); // perspective scaling
+          flowers.push(new Flower(e.clientX, e.clientY, scale));
+          syncBees();
+          // All idle bees immediately pick this new flower as target
+          bees.forEach((b) => {
+            if (!b.target) b.pickTarget();
+          });
+        });
+
+        let last = performance.now();
+        function loop(now) {
+          const dt = Math.min((now - last) / 1000, 0.05);
+          last = now;
+          ctx.clearRect(0, 0, W, H);
+          drawBackground();
+          flowers.forEach((f) => f.update(dt));
+          flowers.sort((a, b) => a.y - b.y);
+          flowers.forEach((f) => f.draw());
+          bees.forEach((b) => b.update(dt));
+          bees.forEach((b) => b.draw());
+          drawCenteredText("hi maryu");
+          drawCenteredText("was nice knowing you", 1);
+          requestAnimationFrame(loop);
+        }
+        requestAnimationFrame(loop);
+      }
+    </script>
+  </body>
 </html>
