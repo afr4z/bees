@@ -124,7 +124,9 @@
         const dpr = window.devicePixelRatio || 1;
 
         W = window.innerWidth;
-        H = window.innerHeight;
+        H = window.visualViewport
+          ? window.visualViewport.height
+          : window.innerHeight;
 
         canvas.width = W * dpr;
         canvas.height = H * dpr;
