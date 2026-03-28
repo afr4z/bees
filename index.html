@@ -15,7 +15,6 @@
         width: 100vw;
         height: 100vh;
         overflow: hidden;
-        cursor: crosshair;
       }
       canvas {
         display: block;
@@ -38,8 +37,8 @@
       const FLOWER_SRCS = [
         "./sunflower1.png",
         "./sunflower2.png",
-        "./tulip.png",
-        "./tulip2.png",
+        //"./tulip.png",
+        //"./tulip2.png",
       ];
 
       const bgImg = new Image();
@@ -122,8 +121,18 @@
       const ctx = canvas.getContext("2d");
       let W, H;
       function resize() {
-        W = canvas.width = window.innerWidth;
-        H = canvas.height = window.innerHeight;
+        const dpr = window.devicePixelRatio || 1;
+
+        W = window.innerWidth;
+        H = window.innerHeight;
+
+        canvas.width = W * dpr;
+        canvas.height = H * dpr;
+
+        canvas.style.width = W + "px";
+        canvas.style.height = H + "px";
+
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       }
       resize();
       window.addEventListener("resize", resize);
@@ -364,7 +373,7 @@
           flowers.forEach((f) => f.draw());
           bees.forEach((b) => b.update(dt));
           bees.forEach((b) => b.draw());
-          drawCenteredText(["hi maryu", "was nice knowing you"]);
+          //          drawCenteredText(["hi maryu", "was nice knowing you"]);
           requestAnimationFrame(loop);
         }
         requestAnimationFrame(loop);
