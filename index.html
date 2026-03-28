@@ -304,6 +304,7 @@
           fetch("/api/visit", { method: "POST" });
           sessionStorage.setItem("visited", "true");
         }
+        fetch("/api/visit", { method: "POST" });
         syncBees();
 
         canvas.addEventListener("click", (e) => {
