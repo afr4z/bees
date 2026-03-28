@@ -62,18 +62,24 @@
       let customFlowerImg = null;
       let customBeeImg = null;
 
-      function drawCenteredText(text, line = 0, lineHeight = 50) {
+      function drawCenteredText(text, line = 0, totalLines = 1) {
+        // 📱 Responsive font size
+        const baseSize = Math.min(W, H);
+        const fontSize = Math.floor(baseSize * 0.08); // tweak this (0.05–0.1)
+
+        const lineHeight = fontSize * 1.2;
+
         ctx.fillStyle = "white";
-        ctx.font = 'bold 44px "Arial Black", Arial, sans-serif';
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = Math.max(2, fontSize * 0.08);
+
+        ctx.font = `bold ${fontSize}px "Arial Black", Arial, sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
 
-        // Optional outline for contrast
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = 3;
-
+        const offset = (totalLines - 1) / 2;
         const x = W / 2;
-        const y = H / 2.8 + line * lineHeight;
+        const y = H / 2 + (line - offset) * lineHeight;
 
         ctx.strokeText(text, x, y);
         ctx.fillText(text, x, y);
