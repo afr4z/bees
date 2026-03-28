@@ -315,13 +315,21 @@
         if (bgImg.complete && bgImg.naturalWidth) {
           const iw = bgImg.naturalWidth,
             ih = bgImg.naturalHeight;
+
+          // Calculate the scale based on the largest dimension (width or height)
           const scale = Math.max(W / iw, H / ih);
-          const dw = iw * scale,
-            dh = ih * scale;
-          ctx.drawImage(bgImg, (W - dw) / 2, (H - dh) / 2, dw, dh);
+
+          // Calculate the new width and height of the image after scaling
+          const dw = iw * scale;
+          const dh = ih * scale;
+
+          // Calculate the y position to align the image's bottom with the bottom of the screen
+          const y = H - dh;
+
+          // Draw the image, horizontally centered and vertically aligned to the bottom
+          ctx.drawImage(bgImg, (W - dw) / 2, y, dw, dh);
         }
       }
-
       function syncBees() {
         const target = Math.max(
           INITIAL_BEES,
@@ -343,8 +351,8 @@
 
           const x = e.clientX;
           // slight curve (natural hills look)
-          const horizon = H * 0.65 + Math.sin(x * 0.002) * 30;
-          const HORIZON = H * 0.65; // adjust this
+          const horizon = H * 0.45 + Math.sin(x * 0.002) * 30;
+          const HORIZON = H * 0.45; // adjust this
           if (y < horizon) return;
 
           const scale = 0.4 + 0.8 * Math.pow(y / H, 1.6); // perspective scaling
