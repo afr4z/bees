@@ -143,7 +143,7 @@
 
       const flowers = [];
       const bees = [];
-      const BEE_PER_FLOWER = 0.8;
+      const BEE_PER_FLOWER = 1.2;
       const INITIAL_BEES = 3;
 
       class Flower {
@@ -237,20 +237,36 @@
           this.idlePhaseX += dt * this.idleSpeedX;
           this.idlePhaseY += dt * this.idleSpeedY;
 
-          // No flowers — idle hover at bottom
+          // No flowers — roam randomly everywhere
           if (!flowers.length) {
             this.target = null;
             this.visiting = false;
-            const tx = this.idleX + Math.sin(this.idlePhaseX) * this.idleRadX;
-            const ty = this.idleY + Math.sin(this.idlePhaseY) * this.idleRadY;
-            const dx = tx - this.x,
-              dy = ty - this.y;
+
+            // Pick a roam target if none or reached
+            if (!this.roamTarget || this.roamDist < 10) {
+              this.roamTarget = {
+                x: Math.random() * W,
+                y: Math.random() * H * 0.8 + H * 0.1, // avoid extreme edges
+              };
+            }
+
+            const dx = this.roamTarget.x - this.x;
+            const dy = this.roamTarget.y - this.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            this.roamDist = dist;
+
             if (Math.abs(dx) > 0.5) this.facing = dx > 0 ? 1 : -1;
-            this.x += dx * dt * 2.5;
-            this.y += dy * dt * 2.5;
+
+            // Add slight wobble so it's not straight-line robotic
+            const perp = Math.sin(this.wobble) * 20;
+            const nx = dy / dist || 0;
+            const ny = -dx / dist || 0;
+
+            this.x += ((dx / dist) * this.speed * 0.5 + nx * perp) * dt;
+            this.y += ((dy / dist) * this.speed * 0.5 + ny * perp) * dt;
+
             return;
           }
-
           // Have flowers — pick target if needed
           if (!this.target || !flowers.includes(this.target)) {
             this.pickTarget();
@@ -346,16 +362,16 @@
         }
         syncBees();
 
+        const music = new Audio("music.mp3");
         canvas.addEventListener("click", (e) => {
+          const text = false;
           const y = e.clientY;
 
           const x = e.clientX;
-          // slight curve (natural hills look)
-          const horizon = H * 0.45 + Math.sin(x * 0.002) * 30;
-          const HORIZON = H * 0.45; // adjust this
+          const scale = 0.4 + 0.8 * Math.pow(y / H, 1.6); // perspective scaling
+          const horizon = H * 0.55; // adjust this
           if (y < horizon) return;
 
-          const scale = 0.4 + 0.8 * Math.pow(y / H, 1.6); // perspective scaling
           flowers.push(new Flower(e.clientX, e.clientY, scale));
           syncBees();
           // All idle bees immediately pick this new flower as target
@@ -365,7 +381,14 @@
         });
 
         let last = performance.now();
+        const lyricsData = [
+          { time: 0, text: "hi maryu" },
+          { time: 3, text: "was nice knowing you" },
+          { time: 6, text: "this is next line" },
+        ];
+        let lyricIndex = 0;
         function loop(now) {
+          music.play();
           const dt = Math.min((now - last) / 1000, 0.05);
           last = now;
           ctx.clearRect(0, 0, W, H);
@@ -376,6 +399,39 @@
           bees.forEach((b) => b.update(dt));
           bees.forEach((b) => b.draw());
           //          drawCenteredText(["hi maryu", "was nice knowing you"]);
+          const t = music.currentTime;
+
+          if (
+            lyricIndex < lyricsData.length - 1 &&
+            t >= lyricsData[lyricIndex + 1].time
+          ) {
+            lyricIndex++;
+            const horizon = 0.65 * H;
+            const x = Math.random() * W;
+            const y = horizon + Math.random() * (H - horizon);
+
+            const scale = 0.4 + 0.8 * Math.pow(y / H, 1.6); // perspective scaling
+            flowers.push(new Flower(x, y, scale));
+            syncBees();
+            // All idle bees immediately pick this new flower as target
+            bees.forEach((b) => {
+              if (!b.target) b.pickTarget();
+            });
+            console.log(t);
+            console.log(
+              lyricsData
+                .slice(Math.max(0, lyricIndex - 1), lyricIndex)
+                .map((l) => l.text),
+            );
+          }
+
+          // Draw current lyric
+          drawCenteredText(
+            lyricsData
+              .slice(Math.max(0, lyricIndex - 1), lyricIndex + 1)
+              .map((l) => l.text),
+          );
+
           requestAnimationFrame(loop);
         }
         requestAnimationFrame(loop);
