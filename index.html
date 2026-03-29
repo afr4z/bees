@@ -382,9 +382,11 @@
 
         let last = performance.now();
         const lyricsData = [
-          { time: 0, text: "hi maryu" },
-          { time: 3, text: "was nice knowing you" },
-          { time: 6, text: "this is next line" },
+          { time: 1, text: "hi maryu" },
+          { time: 3, text: "i met you for the first time" },
+          { time: 3, text: "this day 3 years ago" },
+          { time: 6, text: "it was nice knowing you" },
+          { time: 7, text: "it was nice knowing you" },
         ];
         let lyricIndex = 0;
         function loop(now) {
@@ -426,11 +428,13 @@
           }
 
           // Draw current lyric
-          drawCenteredText(
-            lyricsData
-              .slice(Math.max(0, lyricIndex - 1), lyricIndex + 1)
-              .map((l) => l.text),
-          );
+          if (t > 0.5) {
+            drawCenteredText(
+              lyricsData
+                .slice(Math.max(0, lyricIndex - 1), lyricIndex + 1)
+                .map((l) => l.text),
+            );
+          }
 
           requestAnimationFrame(loop);
         }
