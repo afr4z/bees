@@ -145,6 +145,7 @@
       const bees = [];
       const BEE_PER_FLOWER = 1.2;
       const INITIAL_BEES = 3;
+      const MAX_FLOWERS = 25;
 
       class Flower {
         constructor(x, y, scale = 1) {
@@ -352,6 +353,7 @@
           Math.floor(flowers.length * BEE_PER_FLOWER),
         );
         while (bees.length < target) bees.push(new Bee());
+        if (bees.length > target) bees.shift();
       }
 
       function init() {
@@ -373,6 +375,12 @@
           if (y < horizon) return;
 
           flowers.push(new Flower(e.clientX, e.clientY, scale));
+          console.log("after adding", [...flowers]);
+
+          if (flowers.length > MAX_FLOWERS) {
+            flowers.shift();
+            console.log("after deleting", flowers);
+          }
           syncBees();
           // All idle bees immediately pick this new flower as target
           bees.forEach((b) => {
@@ -396,7 +404,7 @@
           ctx.clearRect(0, 0, W, H);
           drawBackground();
           flowers.forEach((f) => f.update(dt));
-          flowers.sort((a, b) => a.y - b.y);
+          [...flowers].sort((a, b) => a.y - b.y);
           flowers.forEach((f) => f.draw());
           bees.forEach((b) => b.update(dt));
           bees.forEach((b) => b.draw());
