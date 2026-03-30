@@ -369,7 +369,7 @@
 
           const x = e.clientX;
           const scale = 0.4 + 0.8 * Math.pow(y / H, 1.6); // perspective scaling
-          const horizon = H * 0.55; // adjust this
+          const horizon = H * 0.65; // adjust this
           if (y < horizon) return;
 
           flowers.push(new Flower(e.clientX, e.clientY, scale));
