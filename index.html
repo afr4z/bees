@@ -49,8 +49,8 @@
       const FLOWER_SRCS = [
         "./sunflower1.png",
         "./sunflower2.png",
-        //"./tulip.png",
-        //"./tulip2.png",
+        "./tulip.png",
+        "./tulip2.png",
       ];
 
       const bgImg = new Image();
@@ -165,6 +165,8 @@
           this.y = y;
           this.scale = 0.001;
           this.targetScale = scale * (0.65 + Math.random() * 0.55);
+          this.dying = false;
+          this.alpha = 1;
           this.stemH = 70 + Math.random() * 40;
           this.angle = (Math.random() - 0.5) * 0.25;
           this.sway = Math.random() * Math.PI * 2;
@@ -173,13 +175,21 @@
           this.spriteIdx = Math.floor(Math.random() * FLOWER_SRCS.length);
         }
 
+        fadeOut() {
+          this.dying = true;
+        }
         update(dt) {
           if (this.scale < this.targetScale)
             this.scale += (this.targetScale - this.scale) * 0.08;
+          if (this.dying) {
+            this.alpha -= dt * 2; // fade speed
+            this.scale *= 0.98; // slight shrink
+          }
           this.sway += dt * this.swaySpeed;
         }
 
         draw() {
+          if (this.alpha <= 0) return;
           const sw = Math.sin(this.sway) * 0.035;
           const fimg = getFlowerImg(this.spriteIdx);
           const iw = fimg.naturalWidth || fimg.width;
@@ -187,6 +197,7 @@
           const drawH = this.stemH * this.scale;
           const drawW = drawH * (iw / ih);
           ctx.save();
+          ctx.globalAlpha = this.alpha;
           ctx.translate(this.x, this.y);
           ctx.rotate(this.angle + sw);
           ctx.scale(this.flipX, 1);
@@ -390,9 +401,10 @@
           console.log("after adding", [...flowers]);
 
           if (flowers.length > MAX_FLOWERS) {
-            flowers.shift();
-            console.log("after deleting", flowers);
+            const oldest = flowers.find((f) => !f.dying);
+            if (oldest) oldest.fadeOut();
           }
+
           syncBees();
           // All idle bees immediately pick this new flower as target
           bees.forEach((b) => {
@@ -405,7 +417,6 @@
           { time: 1, text: "hi maryu" },
           { time: 5, text: "this day 3 years ago" },
           { time: 5, text: "was when we met for the first time" },
-          { time: 5, text: "held hands for the first time" },
           { time: 12, text: "though we had our ups and downs" },
           { time: 16, text: "our relationship will always be" },
           { time: 16, text: "one of the most beautiful things in my life" },
