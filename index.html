@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Flower Boy</title>
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital@1&display=swap");
@@ -13,14 +13,21 @@
       }
       body {
         width: 100vw;
-        height: 100vh;
+        height: 100dvh;
         overflow: hidden;
+        margin: 0;
+        background-image: url('./Boneless Flower Boy.jpg');
+        background-size: cover;
+        background-position: center;
+        min-height: 100dvh;
+        min-height: -webkit-fill-available;
       }
       canvas {
         display: block;
         position: absolute;
         top: 0;
         left: 0;
+        background: transparent;
       }
 
       input[type="file"] {
