@@ -393,13 +393,20 @@
         let last = performance.now();
         const lyricsData = [
           { time: 1, text: "hi maryu" },
-          { time: 3, text: "i met you for the first time" },
           { time: 3, text: "this day 3 years ago" },
-          { time: 6, text: "it was nice knowing you" },
-          { time: 9, text: "you'll always be" },
-          { time: 9, text: "something special in my heart" },
+          { time: 3, text: "was when we met for the first time" },
+          { time: 6, text: "held hands for the " },
+          { time: 6, text: "   first time   " },
+          { time: 9, text: "it was nice knowing you" },
+          { time: 9, text: "                       " },
+          { time: 11, text: "you'll always be this" },
+          { time: 11, text: "something special in my heart" },
+          { time: 12, text: "adieu ma chère" },
           { time: 12, text: ":)" },
         ];
+        //this day 3 years ago was the first time we met
+        // first time we held cands
+
         let lyricIndex = 0;
         function loop(now) {
           music.play();
