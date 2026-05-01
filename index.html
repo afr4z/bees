@@ -416,6 +416,26 @@
         ];
         //this day 3 years ago was the first time we met
         // first time we held cands
+        function getCurrentLines(t) {
+          const valid = lyricsData.filter((line) => line.time <= t);
+          if (!valid.length) return [];
+
+          const latestTime = Math.max(...valid.map((l) => l.time));
+          return valid.filter((line) => line.time === latestTime);
+        }
+
+        let lastLinesKey = "";
+
+        function renderLyrics(t) {
+          const lines = getCurrentLines(t).map((l) => l.text);
+          const key = lines.join("|");
+
+          // only redraw if something actually changed
+          if (key !== lastLinesKey) {
+            drawCenteredText(lines);
+            lastLinesKey = key;
+          }
+        }
 
         let lyricIndex = 0;
         function loop(now) {
@@ -458,11 +478,7 @@
 
           // Draw current lyric
           if (showMessage !== null && t > 0.5) {
-            drawCenteredText(
-              lyricsData
-                .slice(Math.max(0, lyricIndex - 1), lyricIndex + 1)
-                .map((l) => l.text),
-            );
+            renderLyrics(t);
           }
 
           requestAnimationFrame(loop);
