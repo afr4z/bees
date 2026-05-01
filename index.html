@@ -422,11 +422,12 @@
           { time: 16, text: "one of the most beautiful things in my life" },
           { time: 20, text: "you'll always be this" },
           { time: 20, text: "something special in my heart" },
-          { time: 24, text: "adieu ma chère" },
-          { time: 24, text: ":)" },
+          { time: 24, text: "i want to dedicate this song to you" },
+          { time: 24, text: "as my farewell" },
+          { time: 28, text: "adieu ma chère" },
+          { time: 28, text: ":)" },
         ];
-        //this day 3 years ago was the first time we met
-        // first time we held cands
+
         function getCurrentLines(t) {
           const valid = lyricsData.filter((line) => line.time <= t);
           if (!valid.length) return [];
