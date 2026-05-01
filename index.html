@@ -405,14 +405,14 @@
           { time: 1, text: "hi maryu" },
           { time: 5, text: "this day 3 years ago" },
           { time: 5, text: "was when we met for the first time" },
-          { time: 9, text: "held hands for the " },
-          { time: 9, text: "   first time   " },
-          { time: 14, text: "it was nice knowing you" },
-          { time: 14, text: "                       " },
-          { time: 18, text: "you'll always be this" },
-          { time: 18, text: "something special in my heart" },
-          { time: 20, text: "adieu ma chère" },
-          { time: 20, text: ":)" },
+          { time: 5, text: "held hands for the first time" },
+          { time: 12, text: "though we had our ups and downs" },
+          { time: 16, text: "our relationship will always be" },
+          { time: 16, text: "one of the most beautiful things in my life" },
+          { time: 20, text: "you'll always be this" },
+          { time: 20, text: "something special in my heart" },
+          { time: 24, text: "adieu ma chère" },
+          { time: 24, text: ":)" },
         ];
         //this day 3 years ago was the first time we met
         // first time we held cands
@@ -421,7 +421,9 @@
           if (!valid.length) return [];
 
           const latestTime = Math.max(...valid.map((l) => l.time));
-          return valid.filter((line) => line.time === latestTime);
+          return valid
+            .filter((line) => line.time === latestTime)
+            .map((line) => line.text);
         }
 
         let lastLinesKey = "";
@@ -478,7 +480,16 @@
 
           // Draw current lyric
           if (showMessage !== null && t > 0.5) {
-            renderLyrics(t);
+            const valid = lyricsData.filter((l) => l.time <= t);
+
+            if (valid.length) {
+              const latestTime = Math.max(...valid.map((l) => l.time));
+              const lines = valid
+                .filter((l) => l.time === latestTime)
+                .map((l) => l.text);
+
+              drawCenteredText(lines); // ALWAYS draw
+            }
           }
 
           requestAnimationFrame(loop);
