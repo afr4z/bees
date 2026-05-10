@@ -182,7 +182,7 @@
           if (this.scale < this.targetScale)
             this.scale += (this.targetScale - this.scale) * 0.08;
           if (this.dying) {
-            this.alpha -= dt * 2; // fade speed
+            this.alpha -= dt * 0.4; // fade speed
             this.scale *= 0.98; // slight shrink
           }
           this.sway += dt * this.swaySpeed;
