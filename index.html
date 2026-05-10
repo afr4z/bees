@@ -387,6 +387,13 @@
         }
         syncBees();
 
+        setTimeout(() => {
+          setInterval(() => {
+            const oldest = flowers.find((f) => !f.dying);
+            if (oldest) oldest.fadeOut();
+          }, 8000); // one dies every 8 seconds
+        }, 32000); // starts just after the last lyric
+
         const music = new Audio("music.mp3");
         canvas.addEventListener("click", (e) => {
           const text = false;
@@ -400,7 +407,7 @@
           flowers.push(new Flower(e.clientX, e.clientY, scale));
           console.log("after adding", [...flowers]);
 
-          if (flowers.length > MAX_FLOWERS || ) {
+          if (flowers.length > MAX_FLOWERS) {
             const oldest = flowers.find((f) => !f.dying);
             if (oldest) oldest.fadeOut();
           }
@@ -491,7 +498,7 @@
           }
 
           // Draw current lyric
-          if ( t > 0.5) {
+          if (t > 0.5) {
             const valid = lyricsData.filter((l) => l.time <= t);
 
             if (valid.length) {
