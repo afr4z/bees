@@ -491,7 +491,7 @@
           }
 
           // Draw current lyric
-          if (showMessage !== null && t > 0.5) {
+          if ( t > 0.5) {
             const valid = lyricsData.filter((l) => l.time <= t);
 
             if (valid.length) {
