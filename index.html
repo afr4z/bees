@@ -466,6 +466,13 @@
           ctx.clearRect(0, 0, W, H);
           drawBackground();
           flowers.forEach((f) => f.update(dt));
+          for (let i = flowers.length - 1; i >= 0; i--) {
+            if (flowers[i].alpha <= 0) {
+              flowers.splice(i, 1);
+              syncBees();
+            }
+          }
+
           [...flowers].sort((a, b) => a.y - b.y);
           flowers.forEach((f) => f.draw());
           bees.forEach((b) => b.update(dt));
