@@ -155,8 +155,8 @@
 
       const flowers = [];
       const bees = [];
-      const BEE_PER_FLOWER = 1.2;
-      const INITIAL_BEES = 3;
+      const BEE_PER_FLOWER = 0.7;
+      const INITIAL_BEES = 0;
       const MAX_FLOWERS = 25;
 
       class Flower {
@@ -400,7 +400,7 @@
           flowers.push(new Flower(e.clientX, e.clientY, scale));
           console.log("after adding", [...flowers]);
 
-          if (flowers.length > MAX_FLOWERS) {
+          if (flowers.length > MAX_FLOWERS || ) {
             const oldest = flowers.find((f) => !f.dying);
             if (oldest) oldest.fadeOut();
           }
@@ -419,12 +419,12 @@
           { time: 5, text: "was when we met for the first time" },
           { time: 12, text: "though we had our ups and downs" },
           { time: 16, text: "our relationship will always be" },
-          { time: 16, text: "one of the most beautiful things in my life" },
+          { time: 16, text: "one of the most beautiful chapters of my life" },
           { time: 20, text: "you'll always be this" },
           { time: 20, text: "something special in my heart" },
           { time: 24, text: "i want to dedicate this song to you" },
-          { time: 24, text: "as my farewell" },
-          { time: 28, text: "adieu ma chère" },
+          { time: 24, text: "my farewell..." },
+          { time: 28, text: "adieu, ma chère." },
           { time: 28, text: ":)" },
         ];
 
