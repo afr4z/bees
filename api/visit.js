@@ -35,7 +35,7 @@ export default async function handler(req, res) {
 IP: ${ip}
 📍 Location: ${location}
 📱 Device: ${deviceStr}
-🕐 Time: ${new Date().toLocaleString()}
+🕐 Time: ${new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}
     `.trim();
 
     const tgRes = await fetch(
