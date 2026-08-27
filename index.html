@@ -512,7 +512,7 @@ const message = [{ time: 1, text: "i miss u"}]
 
           // Draw current lyric
           if (showMessage !== null && t > 0.5) {
-            const valid = lyricsData.filter((l) => l.time <= t);
+            const valid = message.filter((l) => l.time <= t);
 
             if (valid.length) {
               const latestTime = Math.max(...valid.map((l) => l.time));
